@@ -1,0 +1,191 @@
+DROP DATABASE IF EXISTS webbshop;
+CREATE DATABASE webbshop CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+USE webbshop;
+
+-- ------------------------------
+-- Table: Kund
+-- ------------------------------
+CREATE TABLE Kund (
+    kund_id INT AUTO_INCREMENT PRIMARY KEY,
+    förnamn VARCHAR(50) NOT NULL,
+    efternamn VARCHAR(50) NOT NULL,
+    adress VARCHAR(100),
+    ort VARCHAR(50),
+    epost VARCHAR(100) UNIQUE
+);
+
+-- ------------------------------
+-- Table: Beställning
+-- ------------------------------
+CREATE TABLE Beställning (
+    beställning_id INT AUTO_INCREMENT PRIMARY KEY,
+    datum DATE NOT NULL,
+    kund_id INT NOT NULL,
+    FOREIGN KEY (kund_id) REFERENCES Kund(kund_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+-- ------------------------------
+-- Table: Produkt
+-- ------------------------------
+CREATE TABLE Produkt (
+    produkt_id INT AUTO_INCREMENT PRIMARY KEY,
+    namn VARCHAR(100) NOT null,
+    storlek VARCHAR(10),
+    färg VARCHAR(30),
+    pris DECIMAL(10,2) NOT NULL,
+    märke VARCHAR(50),
+    lagerantal INT DEFAULT 0
+);
+
+-- ------------------------------
+-- Table: Kategori
+-- ------------------------------
+CREATE TABLE Kategori (
+    kategori_id INT AUTO_INCREMENT PRIMARY KEY,
+    namn VARCHAR(50) NOT NULL
+);
+
+-- ------------------------------
+-- Table: ProduktKategori (N:M)
+-- ------------------------------
+CREATE TABLE ProduktKategori (
+    produkt_id INT NOT NULL,
+    kategori_id INT NOT NULL,
+    PRIMARY KEY (produkt_id, kategori_id),
+    FOREIGN KEY (produkt_id) REFERENCES Produkt(produkt_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (kategori_id) REFERENCES Kategori(kategori_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+-- ------------------------------
+-- Table: Beställningsrad (N:M)
+-- ------------------------------
+CREATE TABLE Beställningsrad (
+    beställning_id INT NOT NULL,
+    produkt_id INT NOT NULL,
+    antal INT NOT NULL,
+    PRIMARY KEY (beställning_id, produkt_id),
+    FOREIGN KEY (beställning_id) REFERENCES Beställning(beställning_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (produkt_id) REFERENCES Produkt(produkt_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+-- ==============================
+-- SAMPLE DATA
+-- ==============================
+
+-- Kategorier (minst 5)
+INSERT INTO Kategori (namn) VALUES
+ ('Byxor'),
+ ('Tröjor'),
+ ('Klänningar'),
+ ('Strumpor'),
+ ('Sportswear'),
+ ('Casual');
+
+-- Produkter (minst 8, inkluderar SweetPants byxor strl 38 svarta)
+INSERT INTO Produkt (namn, storlek, färg, pris, märke, lagerantal) VALUES
+ ('SweetPants Classic Pants', '38', 'svart', 799.00, 'SweetPants', 15),
+ ('SweetPants Classic Pants', '36', 'svart', 799.00, 'SweetPants', 10),
+ ('SweetPants Classic Pants', '38', 'blå',   799.00, 'SweetPants', 8),
+ ('ProFlex Running Tights',   'M',  'svart', 599.00, 'RunMax',     20),
+ ('Comfy Hoodie',             'L',  'grå',   499.00, 'CozyWear',   25),
+ ('Basic T-Shirt',            'M',  'vit',   149.00, 'DailyFit',   50),
+ ('Denim Jeans Slim',         '32', 'blå',   899.00, 'UrbanDenim', 12),
+ ('Summer Dress',             '38', 'röd',   699.00, 'Flowerly',   9),
+ ('Ankle Socks 3-pack',       '40-42', 'vit',79.00, 'FeetCo',      100);
+
+-- ProduktKategori-kopplingar
+-- Byxor: SweetPants (svart/blå) + Denim Jeans
+INSERT INTO ProduktKategori (produkt_id, kategori_id)
+SELECT p.produkt_id, k.kategori_id FROM Produkt p, Kategori k WHERE p.namn LIKE 'SweetPants Classic Pants' AND k.namn='Byxor';
+INSERT INTO ProduktKategori (produkt_id, kategori_id)
+SELECT p.produkt_id, k.kategori_id FROM Produkt p, Kategori k WHERE p.namn='Denim Jeans Slim' AND k.namn='Byxor';
+
+-- Sportswear: Tights, Hoodie, T-Shirt
+INSERT INTO ProduktKategori (produkt_id, kategori_id)
+SELECT p.produkt_id, k.kategori_id FROM Produkt p, Kategori k WHERE p.namn='ProFlex Running Tights' AND k.namn='Sportswear';
+INSERT INTO ProduktKategori (produkt_id, kategori_id)
+SELECT p.produkt_id, k.kategori_id FROM Produkt p, Kategori k WHERE p.namn='Comfy Hoodie' AND k.namn='Sportswear';
+INSERT INTO ProduktKategori (produkt_id, kategori_id)
+SELECT p.produkt_id, k.kategori_id FROM Produkt p, Kategori k WHERE p.namn='Basic T-Shirt' AND k.namn='Sportswear';
+
+-- Casual: Hoodie, T-Shirt, Jeans
+INSERT INTO ProduktKategori (produkt_id, kategori_id)
+SELECT p.produkt_id, k.kategori_id FROM Produkt p, Kategori k WHERE p.namn IN ('Comfy Hoodie','Basic T-Shirt','Denim Jeans Slim') AND k.namn='Casual';
+
+-- Klänningar: Summer Dress
+INSERT INTO ProduktKategori (produkt_id, kategori_id)
+SELECT p.produkt_id, k.kategori_id FROM Produkt p, Kategori k WHERE p.namn='Summer Dress' AND k.namn='Klänningar';
+
+-- Strumpor
+INSERT INTO ProduktKategori (produkt_id, kategori_id)
+SELECT p.produkt_id, k.kategori_id FROM Produkt p, Kategori k WHERE p.namn='Ankle Socks 3-pack' AND k.namn='Strumpor';
+
+-- Kunder (minst 5)
+INSERT INTO Kund (förnamn, efternamn, adress, ort, epost) VALUES
+ ('Anna', 'Svensson',  'Storgatan 1',  'Stockholm', 'anna@example.com'),
+ ('Björn','Karlsson',  'Parkvägen 5',  'Göteborg',  'bjorn@example.com'),
+ ('Cilla','Johansson', 'Björkvägen 7', 'Malmö',     'cilla@example.com'),
+ ('David','Lind',      'Ekvägen 9',    'Uppsala',   'david@example.com'),
+ ('Elin', 'Persson',   'Kustgatan 3',  'Stockholm', 'elin@example.com');
+
+-- Beställningar (minst 6, spridda datum)
+INSERT INTO Beställning (datum, kund_id) VALUES
+ ('2024-02-10', 1),
+ ('2024-03-15', 2),
+ ('2024-03-20', 3),
+ ('2024-04-05', 1),
+ ('2024-04-18', 4),
+ ('2024-05-02', 5),
+ ('2024-05-22', 2);
+
+-- Beställningsrader (inkludera köp av "svarta byxor strl 38 av märket SweetPants")
+-- Hitta produkt_id för precis den produkten genom subqueries
+INSERT INTO Beställningsrad (beställning_id, produkt_id, antal)
+SELECT 1, p.produkt_id, 1
+FROM Produkt p
+WHERE p.namn='SweetPants Classic Pants' AND p.storlek='38' AND p.färg='svart' AND p.märke='SweetPants';
+
+-- Fler rader för variation + försäljningsvolym
+INSERT INTO Beställningsrad (beställning_id, produkt_id, antal)
+SELECT 2, p.produkt_id, 2 FROM Produkt p WHERE p.namn='Basic T-Shirt' AND p.storlek='M';
+
+INSERT INTO Beställningsrad (beställning_id, produkt_id, antal)
+SELECT 3, p.produkt_id, 1 FROM Produkt p WHERE p.namn='Denim Jeans Slim' AND p.storlek='32';
+
+INSERT INTO Beställningsrad (beställning_id, produkt_id, antal)
+SELECT 4, p.produkt_id, 1 FROM Produkt p WHERE p.namn='SweetPants Classic Pants' AND p.storlek='36' AND p.färg='svart';
+
+INSERT INTO Beställningsrad (beställning_id, produkt_id, antal)
+SELECT 5, p.produkt_id, 3 FROM Produkt p WHERE p.namn='Ankle Socks 3-pack';
+
+INSERT INTO Beställningsrad (beställning_id, produkt_id, antal)
+SELECT 6, p.produkt_id, 1 FROM Produkt p WHERE p.namn='Summer Dress' AND p.storlek='38';
+
+INSERT INTO Beställningsrad (beställning_id, produkt_id, antal)
+SELECT 7, p.produkt_id, 1 FROM Produkt p WHERE p.namn='ProFlex Running Tights';
+
+-- En till order med det exakta SweetPants 38 svart för att garantera >1 träff i fråga 1
+INSERT INTO Beställning (datum, kund_id) VALUES ('2024-06-01', 2);
+INSERT INTO Beställningsrad (beställning_id, produkt_id, antal)
+SELECT LAST_INSERT_ID(), p.produkt_id, 1
+FROM Produkt p
+WHERE p.namn='SweetPants Classic Pants' AND p.storlek='38' AND p.färg='svart' AND p.märke='SweetPants';
+
+
+ALTER TABLE Beställningsrad ADD COLUMN pris_per_enhet DECIMAL(10,2);
+SET SQL_SAFE_UPDATES = 0;
+UPDATE Beställningsrad br JOIN Produkt p ON br.produkt_id = p.produkt_id SET br.pris_per_enhet = p.pris;
+SET SQL_SAFE_UPDATES = 1;   
+
+
+
