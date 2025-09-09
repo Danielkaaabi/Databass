@@ -1,0 +1,10 @@
+FROM Kund k
+JOIN Beställning b ON k.kund_id = b.kund_id
+JOIN Beställningsrad br ON b.beställning_id = br.beställning_id  
+JOIN Produkt p ON br.produkt_id = p.produkt_id
+JOIN ProduktKategori pk ON p.produkt_id = pk.produkt_id
+JOIN Kategori ka ON pk.kategori_id = ka.kategori_id
+WHERE p.färg = 'svart' 
+  AND p.storlek = '38'
+  AND p.märke = 'SweetPants'
+  AND ka.namn = 'Byxor';
